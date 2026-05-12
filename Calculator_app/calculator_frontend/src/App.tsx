@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [calcError, setCalcError] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isPro, setIsPro] = useState(false);
+  const [subscriptionMessage, setSubscriptionMessage] = useState('');
 
   // Form State
   const [email, setEmail] = useState('');
@@ -82,7 +83,7 @@ const App: React.FC = () => {
         );
         setOpCount(subscription.op_count ?? 0);
         setOperationLimit(subscription.limit ?? MAX_OPERATIONS);
-        setIsPro(subscription.plan === 'pro');
+        setIsPro(!!subscription.isPro);
       } catch {
         if (!isActive) return;
         setHistory([]);
@@ -140,6 +141,7 @@ const App: React.FC = () => {
       const message = apiError?.response?.data?.error || 'Calculation failed. Please try again.';
 
       if (apiError?.response?.status === 402) {
+        setSubscriptionMessage(message);
         setShowSubscription(true);
       }
 
@@ -387,8 +389,8 @@ const App: React.FC = () => {
         <div className="modal-overlay">
           <div className="subscription-modal glass animate-fade-in">
             <div className="modal-header">
-              <h3>Upgrade to Pro</h3>
-              <p>You've reached the limit of free operations.</p>
+              <h3>{subscriptionMessage.includes('expired') ? 'Subscription Expired' : 'Upgrade to Pro'}</h3>
+              <p>{subscriptionMessage || "You've reached the limit of free operations."}</p>
             </div>
             
             <div className="pricing-plans">

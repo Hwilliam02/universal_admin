@@ -49,9 +49,9 @@ export const compute = async (req, res) => {
       await CalculationHistory.deleteMany({ _id: { $in: oldest.map(o => o._id) } });
     }
 
-    // Increment op_count for free users
+    // Increment op_count for anyone not considered 'Pro' (Free users or Expired Pro users)
     let newOpCount = subscription.op_count;
-    if (subscription.plan === 'free') {
+    if (!req.isPro) {
       subscription.op_count += 1;
       await subscription.save();
       newOpCount = subscription.op_count;
@@ -100,9 +100,14 @@ export const getSubscriptionInfo = async (req, res) => {
     if (!subscription) {
       subscription = await UserSubscription.create({ global_user_id, plan: 'free', op_count: 0 });
     }
+    const isExpired = subscription.current_period_end && new Date(subscription.current_period_end) < new Date();
+    const isPro = subscription.plan === 'pro' && subscription.status === 'active' && !isExpired;
+
     return res.json({
       plan:       subscription.plan,
       status:     subscription.status,
+      isPro,
+      isExpired,
       op_count:   subscription.op_count,
       limit:      parseInt(process.env.FREE_OPERATION_LIMIT || '5', 10),
       period_end: subscription.current_period_end,
