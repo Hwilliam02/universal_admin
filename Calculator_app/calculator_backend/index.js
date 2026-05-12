@@ -4,13 +4,14 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import dbConnect from './config/db.js';
 import { initPublicKey } from './config/publicKey.js';
+import authRoutes from './routes/authRoutes.js';
 import calculatorRoutes from './routes/calculatorRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 
 dotenv.config();
 
 const app  = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT ;
 const allowedOrigins = (
   process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:5173'
 )
@@ -40,12 +41,22 @@ app.use(cors({
 
 // ── General middleware ─────────────────────────────────────────────────────────
 app.use(morgan('dev'));
-app.use(express.json());
+
+// Apply express.json() to all routes EXCEPT the Stripe webhook
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/subscribe/webhook') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
+
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'calculator-backend' }));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+app.use('/api/auth', authRoutes);
 app.use('/api/calculator',  calculatorRoutes);
 app.use('/api/subscribe',   subscriptionRoutes);
 

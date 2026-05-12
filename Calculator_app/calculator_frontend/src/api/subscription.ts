@@ -1,23 +1,23 @@
 import calcClient from './calcClient';
 
-export interface SubscriptionStatus {
-  plan:       'free' | 'pro';
-  status:     'active' | 'cancelled' | 'past_due' | 'trialing';
-  op_count:   number;
-  limit:      number;
-  period_end: string | null;
+export interface CheckoutSessionResponse {
+  url: string;
 }
 
-/** GET /api/subscribe/status */
-export const getStatus = async (): Promise<SubscriptionStatus> => {
-  const { data } = await calcClient.get('/api/subscribe/status');
+/**
+ * POST /api/subscribe/create-checkout-session
+ * Returns the Stripe Checkout URL for the Pro plan.
+ */
+export const createCheckoutSession = async (): Promise<CheckoutSessionResponse> => {
+  const { data } = await calcClient.post('/api/subscribe/create-checkout-session');
   return data;
 };
 
-/** POST /api/subscribe/create-checkout-session → redirects to Stripe URL */
-export const createCheckoutSession = async (): Promise<void> => {
-  const { data } = await calcClient.post('/api/subscribe/create-checkout-session');
-  if (data.url) {
-    window.location.href = data.url;
-  }
+/**
+ * GET /api/subscribe/status
+ * Fetches the current user's subscription details.
+ */
+export const getSubscriptionStatus = async () => {
+  const { data } = await calcClient.get('/api/subscribe/status');
+  return data;
 };

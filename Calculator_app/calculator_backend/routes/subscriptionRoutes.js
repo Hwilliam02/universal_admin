@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
 // Protected routes
-router.get('/status',                   verifyToken, getStatus);
+router.get('/status', verifyToken, getStatus);
 router.post('/create-checkout-session', verifyToken, createCheckoutSession);
 
 export default router;

@@ -35,9 +35,16 @@ export const createCheckoutSession = async (req, res) => {
   try {
     const { global_user_id, email } = req.user;
     const PRICE_ID    = process.env.STRIPE_PRICE_ID;
-    const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+    
+    // Get frontend URL from config
+    const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:5173')
+      .split(',')
+      .map(o => o.trim())
+      .filter(Boolean);
+    const FRONTEND_URL = allowedOrigins[0];
 
     if (!PRICE_ID || PRICE_ID === 'price_REPLACE_ME') {
+
       return res.status(500).json({ error: 'Stripe PRICE_ID is not configured' });
     }
 

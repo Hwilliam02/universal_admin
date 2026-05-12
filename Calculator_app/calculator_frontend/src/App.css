@@ -518,8 +518,69 @@ button:active {
   to { transform: scale(1); opacity: 1; }
 }
 
+/* Notifications */
+.notification {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.85rem 1.5rem;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1100;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification.success {
+  background: hsl(142 76% 36%);
+  color: white;
+}
+
+.notification.error {
+  background: hsl(0 84% 60%);
+  color: white;
+}
+
+.notification button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  padding: 0;
+  width: auto;
+  height: auto;
+  box-shadow: none;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from { transform: translate(-50%, -100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* Pro Badge */
+.pro-badge {
+  background: linear-gradient(135deg, hsl(45 93% 47%), hsl(35 92% 51%));
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.4rem;
+  margin-left: 0.5rem;
+  box-shadow: 0 0 12px hsl(45 93% 47% / 0.4);
+}
+
 @media (max-width: 600px) {
   .auth-modal {
     padding: 1.5rem;
   }
 }
+

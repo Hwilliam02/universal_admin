@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import { useAuthStore } from './store/authStore';
-import { masterLogin, masterSignup } from './api/auth';
+import { masterLogin, masterSignup, refreshAppToken, verifyCode } from './api/auth';
+import type { AuthResult, VerificationRequiredResponse } from './api/auth';
+import { compute, getHistory, getSubscriptionInfo } from './api/calculator';
+import { createCheckoutSession } from './api/subscription';
 
 const MAX_OPERATIONS = 5;
 
@@ -10,10 +13,14 @@ const App: React.FC = () => {
   const [display, setDisplay] = useState('0');
   const [equation, setEquation] = useState('');
   const [opCount, setOpCount] = useState(0);
+  const [operationLimit, setOperationLimit] = useState(MAX_OPERATIONS);
   const [showSubscription, setShowSubscription] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [isLoginView, setIsLoginView] = useState(true);
   const [history, setHistory] = useState<string[]>([]);
+  const [calcError, setCalcError] = useState('');
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [isPro, setIsPro] = useState(false);
 
   // Form State
   const [email, setEmail] = useState('');
@@ -21,8 +28,16 @@ const App: React.FC = () => {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [isVerificationView, setIsVerificationView] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+
+  const isVerificationRequired = (
+    response: AuthResult
+  ): response is VerificationRequiredResponse =>
+    'status' in response && response.status === 'verification_required';
 
   const handleNumber = (num: string) => {
+    setCalcError('');
     if (display === '0') {
       setDisplay(num);
     } else {
@@ -31,8 +46,64 @@ const App: React.FC = () => {
   };
 
   const handleOperator = (op: string) => {
+    setCalcError('');
     setEquation(display + ' ' + op + ' ');
     setDisplay('0');
+  };
+
+  useEffect(() => {
+    // Handle Stripe redirect params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscribed') === 'true') {
+      setNotification({ type: 'success', message: 'Welcome to Pro! Your subscription is now active.' });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('cancelled') === 'true') {
+      setNotification({ type: 'error', message: 'Subscription cancelled. You can try again later.' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let isActive = true;
+
+    const loadCalculatorState = async () => {
+      try {
+        const [historyData, subscription] = await Promise.all([
+          getHistory(),
+          getSubscriptionInfo(),
+        ]);
+
+        if (!isActive) return;
+
+        setHistory(
+          historyData.map((item) => `${item.equation} = ${item.result}`)
+        );
+        setOpCount(subscription.op_count ?? 0);
+        setOperationLimit(subscription.limit ?? MAX_OPERATIONS);
+        setIsPro(subscription.plan === 'pro');
+      } catch {
+        if (!isActive) return;
+        setHistory([]);
+      }
+    };
+
+    void loadCalculatorState();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated]);
+
+  const handleLogout = () => {
+    clearAuth();
+    setDisplay('0');
+    setEquation('');
+    setHistory([]);
+    setOpCount(0);
+    setOperationLimit(MAX_OPERATIONS);
+    setCalcError('');
   };
 
   const calculate = async () => {
@@ -41,23 +112,38 @@ const App: React.FC = () => {
       return;
     }
 
-    if (opCount >= MAX_OPERATIONS) {
+    if (opCount >= operationLimit) {
       setShowSubscription(true);
       return;
     }
 
     try {
-      const fullEquation = equation + display;
-      // Using eval for demo purposes in a calculator MVP
-      // In a real app, we would use a math parser
-      const result = eval(fullEquation);
-      
-      setHistory([fullEquation + ' = ' + result, ...history].slice(0, 5));
-      setDisplay(result.toString());
+      const fullEquation = `${equation}${display}`.trim();
+      if (!fullEquation || /[+\-*/]$/.test(fullEquation)) {
+        setCalcError('Please enter a complete equation before calculating.');
+        return;
+      }
+
+      const response = await compute(fullEquation);
+
+      setCalcError('');
+      setHistory((currentHistory) => [
+        `${response.equation} = ${response.result}`,
+        ...currentHistory,
+      ].slice(0, 2));
+      setDisplay(response.result);
       setEquation('');
-      setOpCount(prev => prev + 1);
+      setOpCount(response.op_count);
+      setOperationLimit(response.limit);
     } catch (error) {
-      setDisplay('Error');
+      const apiError = error as { response?: { status?: number; data?: { error?: string } } };
+      const message = apiError?.response?.data?.error || 'Calculation failed. Please try again.';
+
+      if (apiError?.response?.status === 402) {
+        setShowSubscription(true);
+      }
+
+      setCalcError(message);
     }
   };
 
@@ -66,18 +152,54 @@ const App: React.FC = () => {
     setIsLoading(true);
     setAuthError('');
     try {
-      if (isLoginView) {
-        const response = await masterLogin({ email, password });
-        setAuth(response.appAccessToken, response.refreshToken, response.user);
-      } else {
-        await masterSignup({ username, email, password });
-        const response = await masterLogin({ email, password });
-        setAuth(response.appAccessToken, response.refreshToken, response.user);
+      const response = isLoginView
+        ? await masterLogin({ email, password })
+        : await masterSignup({ username, email, password });
+
+      if (isVerificationRequired(response)) {
+        setIsVerificationView(true);
+        setAuthError(response.message);
+        return;
       }
+
+      const appToken = response.appAccessToken
+        || await refreshAppToken(response.refreshToken);
+
+      setAuth(appToken, response.refreshToken, response.user);
       setShowLogin(false);
-    } catch (err: any) {
-      setAuthError(err.response?.data?.message || 'Authentication failed');
+    } catch (err: unknown) {
+      const authErrorResponse = err as { response?: { data?: { message?: string } } };
+      setAuthError(authErrorResponse.response?.data?.message || 'Authentication failed');
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setAuthError('');
+    try {
+      await verifyCode({ email, verification_code: verificationCode });
+      // After verification, switch back to login to get tokens
+      setIsVerificationView(false);
+      setIsLoginView(true);
+      setAuthError('Email verified! Please sign in with your password.');
+    } catch (err: unknown) {
+      const authErrorResponse = err as { response?: { data?: { error?: string } } };
+      setAuthError(authErrorResponse.response?.data?.error || 'Verification failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    setIsLoading(true);
+    try {
+      const { url } = await createCheckoutSession();
+      window.location.href = url;
+    } catch (err) {
+      setCalcError('Failed to start checkout. Please try again.');
       setIsLoading(false);
     }
   };
@@ -85,25 +207,33 @@ const App: React.FC = () => {
   const clear = () => {
     setDisplay('0');
     setEquation('');
+    setCalcError('');
   };
-
   return (
     <div className="app-container">
       <header className="app-header animate-fade-in">
         <div className="universal-brand">
           <span className="logo-dot"></span>
           <span className="brand-text">Universal Calculator</span>
+          {isPro && <span className="pro-badge">PRO</span>}
         </div>
 
         {isAuthenticated ? (
           <div className="user-profile">
             <span className="user-name">Hi, {user?.username}</span>
-            <button className="btn-logout" onClick={clearAuth}>Logout</button>
+            <button className="btn-logout" onClick={handleLogout}>Logout</button>
           </div>
         ) : (
           <button className="btn-login-trigger" onClick={() => setShowLogin(true)}>Login</button>
         )}
       </header>
+
+      {notification && (
+        <div className={`notification ${notification.type} animate-slide-down`}>
+          {notification.message}
+          <button onClick={() => setNotification(null)}>×</button>
+        </div>
+      )}
 
       <div className="main-layout">
         <div className="calculator-stack">
@@ -111,6 +241,7 @@ const App: React.FC = () => {
             <div className="display-section">
               <div className="equation">{equation}</div>
               <div className="current-display">{display}</div>
+              {calcError && <div className="error-message">{calcError}</div>}
             </div>
 
             <div className="buttons-grid">
@@ -143,10 +274,10 @@ const App: React.FC = () => {
             <div className="progress-bar">
               <div 
                 className="progress-fill" 
-                style={{ width: `${(opCount / MAX_OPERATIONS) * 100}%` }}
+                style={{ width: `${(opCount / operationLimit) * 100}%` }}
               ></div>
             </div>
-            <span>Free Tier: {opCount}/{MAX_OPERATIONS} Operations</span>
+            <span>{isPro ? 'Pro Member' : `Free Tier: ${opCount}/${operationLimit} Operations`}</span>
           </div>
         </div>
 
@@ -166,60 +297,88 @@ const App: React.FC = () => {
         <div className="modal-overlay">
           <div className="auth-modal glass animate-scale-up">
             <div className="modal-header">
-              <h3>{isLoginView ? 'Welcome Back' : 'Create Account'}</h3>
-              <p>{isLoginView ? 'Login to continue calculating' : 'Join Universal for more features'}</p>
+              <h3>{isVerificationView ? 'Verify Email' : (isLoginView ? 'Welcome Back' : 'Create Account')}</h3>
+              <p>{isVerificationView ? 'Enter the code sent to your email' : (isLoginView ? 'Login to continue calculating' : 'Join Universal for more features')}</p>
             </div>
 
-            <form onSubmit={handleAuth} className="auth-form">
-              {!isLoginView && (
+            {isVerificationView ? (
+              <form onSubmit={handleVerification} className="auth-form">
                 <div className="input-group">
-                  <label>Username</label>
+                  <label>Verification Code</label>
                   <input 
                     type="text" 
-                    value={username} 
-                    onChange={(e) => setUsername(e.target.value)} 
-                    placeholder="Enter username"
+                    value={verificationCode} 
+                    onChange={(e) => setVerificationCode(e.target.value)} 
+                    placeholder="6-digit code"
+                    maxLength={6}
                     required 
                   />
                 </div>
-              )}
-              <div className="input-group">
-                <label>Email Address</label>
-                <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="name@company.com"
-                  required 
-                />
-              </div>
-              <div className="input-group">
-                <label>Password</label>
-                <input 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="••••••••"
-                  required 
-                />
-              </div>
 
-              {authError && <div className="error-message">{authError}</div>}
+                {authError && <div className="error-message">{authError}</div>}
 
-              <button type="submit" className="btn-primary" disabled={isLoading}>
-                {isLoading ? 'Processing...' : (isLoginView ? 'Sign In' : 'Sign Up')}
-              </button>
-            </form>
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                  {isLoading ? 'Verifying...' : 'Verify Code'}
+                </button>
+                
+                <div className="auth-footer">
+                   <p>Didn't get a code? <span onClick={() => setIsVerificationView(false)}>Go back</span></p>
+                </div>
+              </form>
+            ) : (
+              <>
+                <form onSubmit={handleAuth} className="auth-form">
+                  {!isLoginView && (
+                    <div className="input-group">
+                      <label>Username</label>
+                      <input 
+                        type="text" 
+                        value={username} 
+                        onChange={(e) => setUsername(e.target.value)} 
+                        placeholder="Enter username"
+                        required 
+                      />
+                    </div>
+                  )}
+                  <div className="input-group">
+                    <label>Email Address</label>
+                    <input 
+                      type="email" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="name@company.com"
+                      required 
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Password</label>
+                    <input 
+                      type="password" 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="••••••••"
+                      required 
+                    />
+                  </div>
 
-            <div className="auth-footer">
-              <p>
-                {isLoginView ? "Don't have an account? " : "Already have an account? "}
-                <span onClick={() => setIsLoginView(!isLoginView)}>
-                  {isLoginView ? 'Sign Up' : 'Sign In'}
-                </span>
-              </p>
-              <button className="btn-close" onClick={() => setShowLogin(false)}>Cancel</button>
-            </div>
+                  {authError && <div className="error-message">{authError}</div>}
+
+                  <button type="submit" className="btn-primary" disabled={isLoading}>
+                    {isLoading ? 'Processing...' : (isLoginView ? 'Sign In' : 'Sign Up')}
+                  </button>
+                </form>
+
+                <div className="auth-footer">
+                  <p>
+                    {isLoginView ? "Don't have an account? " : "Already have an account? "}
+                    <span onClick={() => setIsLoginView(!isLoginView)}>
+                      {isLoginView ? 'Sign Up' : 'Sign In'}
+                    </span>
+                  </p>
+                  <button className="btn-close" onClick={() => setShowLogin(false)}>Cancel</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -243,8 +402,8 @@ const App: React.FC = () => {
                   <li>✓ Sync across Universal Admin</li>
                   <li>✓ 24/7 Priority Support</li>
                 </ul>
-                <button className="btn-primary" onClick={() => alert('Redirecting to Checkout...')}>
-                  Get Pro Now
+                <button className="btn-primary" onClick={handleSubscribe} disabled={isLoading}>
+                  {isLoading ? 'Processing...' : 'Get Pro Now'}
                 </button>
               </div>
             </div>

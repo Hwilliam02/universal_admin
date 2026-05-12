@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { refreshAppToken } from './auth';
+import { useAuthStore } from '../store/authStore';
 
 const CALC_URL = import.meta.env.VITE_CALC_BACKEND_URL || 'http://localhost:5000';
 
@@ -9,7 +11,7 @@ export const calcClient = axios.create({
 
 // ── Request interceptor: attach token from localStorage ───────────────────────
 calcClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('appAccessToken');
+  const token = useAuthStore.getState().appAccessToken || localStorage.getItem('appAccessToken');
   if (token) config.headers['Authorization'] = `Bearer ${token}`;
   return config;
 });
@@ -46,13 +48,13 @@ calcClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refreshToken');
-      const productId    = import.meta.env.VITE_CALCULATOR_PRODUCT_ID;
+      const refreshToken = useAuthStore.getState().refreshToken || localStorage.getItem('refreshToken');
 
-      if (!refreshToken || !productId) {
+      if (!refreshToken) {
         processQueue(error, null);
         isRefreshing = false;
         // Clear auth and force re-login
+        useAuthStore.setState({ appAccessToken: null, refreshToken: null, isAuthenticated: false, user: null });
         localStorage.removeItem('appAccessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/login';
@@ -60,19 +62,15 @@ calcClient.interceptors.response.use(
       }
 
       try {
-        const { default: masterClient } = await import('./masterClient');
-        const { data } = await masterClient.post('/universal-auth/refresh-token', {
-          refresh_token: refreshToken,
-          product_id:    productId,
-        });
-
-        const newToken = data.accessToken;
+        const newToken = await refreshAppToken(refreshToken);
+        useAuthStore.setState({ appAccessToken: newToken });
         localStorage.setItem('appAccessToken', newToken);
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         processQueue(null, newToken);
         return calcClient(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
+        useAuthStore.setState({ appAccessToken: null, refreshToken: null, isAuthenticated: false, user: null });
         localStorage.removeItem('appAccessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/login';

@@ -21,9 +21,20 @@ const buildAppAccessToken = async ({ user, product_id }) => {
     throw err;
   }
 
-  const visa = await Visa.findOne({ global_user_id: user.global_user_id, product_id: product.product_id, status: 'Active' });
+  let visa = await Visa.findOne({ global_user_id: user.global_user_id, product_id: product.product_id });
+  
   if (!visa) {
-    const err = new Error('User does not have an active visa for this product');
+    // If no visa exists, create a default 'User' visa
+    visa = await Visa.create({
+      global_user_id: user.global_user_id,
+      product_id: product.product_id,
+      role: 'User',
+      status: 'Active'
+    });
+    console.log(`[Auto-Visa] Created new visa for ${user.email} on product ${product.name}`);
+  } else if (visa.status !== 'Active') {
+    // If a visa exists but is NOT active (e.g. Suspended), block access
+    const err = new Error(`Your access to ${product.name} is ${visa.status.toLowerCase()}`);
     err.statusCode = 403;
     throw err;
   }

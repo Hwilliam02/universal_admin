@@ -24,9 +24,19 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       setAuth: (appAccessToken, refreshToken, user) =>
-        set({ appAccessToken, refreshToken, user, isAuthenticated: true }),
+        set(() => {
+          localStorage.setItem('appAccessToken', appAccessToken);
+          localStorage.setItem('refreshToken', refreshToken);
+
+          return { appAccessToken, refreshToken, user, isAuthenticated: true };
+        }),
       clearAuth: () =>
-        set({ appAccessToken: null, refreshToken: null, user: null, isAuthenticated: false }),
+        set(() => {
+          localStorage.removeItem('appAccessToken');
+          localStorage.removeItem('refreshToken');
+
+          return { appAccessToken: null, refreshToken: null, user: null, isAuthenticated: false };
+        }),
     }),
     {
       name: 'calc-auth-storage',
