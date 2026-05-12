@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+*.local
+.DS_Store
+Thumbs.db
+uploads/original/*
+uploads/signatures/*
+uploads/signed/*
+!uploads/original/.gitkeep
+!uploads/signatures/.gitkeep
+!uploads/signed/.gitkeep

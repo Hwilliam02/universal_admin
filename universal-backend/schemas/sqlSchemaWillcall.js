@@ -1,0 +1,617 @@
+// queries/tenantSchema.js
+export default `;
+
+CREATE TABLE IF NOT EXISTS broadcast_messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  role VARCHAR(255) NULL,
+  type ENUM('text', 'image', 'video') NOT NULL,
+  text TEXT,
+  media_id INT,
+  created_by_id VARCHAR(45) NOT NULL,
+  created_by_role VARCHAR(255) NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS clinics (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ClinicId VARCHAR(45) DEFAULT NULL,
+  territory_id VARCHAR(45) DEFAULT NULL,
+  lab_id VARCHAR(45) DEFAULT NULL,
+  clinic_id VARCHAR(256) NOT NULL,
+  clinic_name VARCHAR(256) NOT NULL,
+  clinic_email VARCHAR(255) NOT NULL,
+  clinic_phone VARCHAR(255) NOT NULL,
+  clinic_fax VARCHAR(255) NOT NULL,
+  clinic_address1 VARCHAR(255) NOT NULL,
+  clinic_address2 VARCHAR(255),
+  clinic_city VARCHAR(255) NOT NULL,
+  clinic_state VARCHAR(255) NOT NULL,
+  clinic_zip VARCHAR(255) NOT NULL,
+  clinic_manager VARCHAR(255),
+  Cmanager_email VARCHAR(255),
+  PT_count VARCHAR(255),
+  multiple_routes BOOLEAN DEFAULT FALSE,
+  lockbox ENUM('combo', 'key', '') DEFAULT 'key',
+  combo VARCHAR(100),
+  time LONGTEXT,
+  opendays JSON,
+  draw_week VARCHAR(255),
+  draw_days JSON,
+  comments LONGTEXT DEFAULT NULL,
+  priority BOOLEAN DEFAULT FALSE,
+  created_by VARCHAR(45) NOT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE,
+  updated_date DATE,
+  is_deleted TINYINT(1) NULL DEFAULT 0,
+  clinic_password VARCHAR(255),
+  delivery_id VARCHAR(45),
+  ondemand BOOLEAN DEFAULT FALSE,
+  is_active BOOLEAN DEFAULT TRUE,
+  cutoff_time TIME,
+  time_zone VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS clinic_data (
+id INT AUTO_INCREMENT PRIMARY KEY,
+clinicid VARCHAR(45) NOT NULL,
+photo LONGTEXT DEFAULT NULL,
+s_photo LONGTEXT DEFAULT NULL,
+location VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS delivery (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  DeliveryId VARCHAR(45) DEFAULT NULL,
+  territory_id VARCHAR(45) DEFAULT NULL,
+  delivery_id VARCHAR(1000) NOT NULL,
+  delivery_name VARCHAR(1000) NOT NULL,
+  delivery_email VARCHAR(255) DEFAULT NULL,
+  delivery_phone VARCHAR(255) DEFAULT NULL,
+  delivery_fax VARCHAR(255) DEFAULT NULL,
+  delivery_address1 VARCHAR(255) NOT NULL,
+  delivery_address2 VARCHAR(255),
+  delivery_city VARCHAR(255) DEFAULT NULL,
+  delivery_state VARCHAR(255) DEFAULT NULL,
+  delivery_zip VARCHAR(255) DEFAULT NULL,
+  delivery_manager VARCHAR(255) DEFAULT NULL,
+  Cmanager_email VARCHAR(255),
+  PT_count VARCHAR(255),
+  multiple_routes BOOLEAN DEFAULT FALSE,
+  photo LONGTEXT DEFAULT NULL,
+  s_photo LONGTEXT DEFAULT NULL,
+  location VARCHAR(255) DEFAULT NULL,
+  time JSON,
+  opendays JSON,
+  draw_week VARCHAR(255),
+  draw_days JSON,
+  comments LONGTEXT DEFAULT NULL,
+  priority BOOLEAN DEFAULT FALSE,
+  lab_id VARCHAR(45) DEFAULT NULL,
+  created_by VARCHAR(45) NOT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE,
+  updated_date DATE,
+  is_deleted TINYINT(1) NULL DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS willcall_delivery_location (
+  deLocation_id INT AUTO_INCREMENT PRIMARY KEY,
+  Deliveryid VARCHAR(45) DEFAULT NULL,
+  order_id VARCHAR(45) NOT NULL,
+  ClinicId VARCHAR(45) NOT NULL,
+  delivery_facility VARCHAR(255) NOT NULL,
+  delivery_address VARCHAR(255) NOT NULL,
+  delivery_address2 VARCHAR(255),
+  delivery_city VARCHAR(255) NOT NULL,
+  deliver_state VARCHAR(255) NOT NULL,
+  delivery_zip VARCHAR(255) NOT NULL,
+  instruction VARCHAR(255) NOT NULL,
+  deliver_by VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ CREATE TABLE IF NOT EXISTS delivery_person (
+  deliveryP_id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id VARCHAR(255) NOT NULL,
+  delivery_name VARCHAR(255) NOT NULL,
+  delivery_email VARCHAR(255) NOT NULL,
+  delivery_phone VARCHAR(255) NOT NULL,
+  delivery_fax VARCHAR(255),
+  wahh VARCHAR(255) NOT NULL,
+  arsflight VARCHAR(255) NOT NULL,
+  saadelivery VARCHAR(255) NOT NULL,
+  bridges_tools VARBINARY(2) NOT NULL,
+  comments LONGTEXT DEFAULT NULL,
+  assigned_driver VARCHAR(255) NOT NULL,
+  territory VARCHAR(255) NOT NULL,
+  mileage VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS drivercoordinates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  riderId VARCHAR(255) NOT NULL,
+  latitude FLOAT NOT NULL,
+  longitude FLOAT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS driver_checkin_report (
+  checkin_id INT AUTO_INCREMENT PRIMARY KEY,
+  driver_id VARCHAR(45) NOT NULL,
+  checkin_date VARCHAR(45) DEFAULT NULL,
+  checkin_time VARCHAR(45) DEFAULT NULL,
+  location VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS willcall_pickups (
+  coordinateid INT AUTO_INCREMENT PRIMARY KEY,
+  riderid VARCHAR(45) NOT NULL,
+  order_id VARCHAR(45) NOT NULL,
+  pickup_name VARCHAR(200),
+  delivery_name VARCHAR(200),
+  trackingId VARCHAR(200),
+  ship_method VARCHAR(100),
+  start_lng DOUBLE NOT NULL,
+  start_lat DOUBLE NOT NULL,
+  end_lng FLOAT NOT NULL,
+  end_lat FLOAT NOT NULL,
+  POD JSON,
+  distance INT NOT NULL,
+  bags_count INT DEFAULT 0,
+  pickup_comment TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS driver_documents (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  driver_id VARCHAR(45) NOT NULL,
+  driver_license VARCHAR(255),
+  vehicle_photo VARCHAR(255),
+  proof_insurance VARCHAR(255),
+  vehicle_registration VARCHAR(255),
+  driver_photo VARCHAR(255),
+  w9_1099 VARCHAR(255),
+  nda_hipaa VARCHAR(255),
+  uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS labs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  lab_id VARCHAR(45) NOT NULL,
+  labcode VARCHAR(255) NULL,
+  lab_name VARCHAR(255) NOT NULL,
+  lab_contact VARCHAR(255) NOT NULL,
+  lab_phone VARCHAR(255) NOT NULL,
+  lab_email VARCHAR(255) NOT NULL,
+  lab_address VARCHAR(255) NOT NULL,
+  lab_city VARCHAR(255) NOT NULL,
+  lab_state VARCHAR(255) NOT NULL,
+  lab_zip VARCHAR(255) NOT NULL,
+  territory_id VARCHAR(45) NULL,
+  comments LONGTEXT DEFAULT NULL,
+  lab_logo VARCHAR(255) DEFAULT NULL,
+  created_by VARCHAR(45) NOT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE,
+  updated_date DATE,
+  is_deleted TINYINT(1) NULL DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS lab_state (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  lab_id VARCHAR(45) NOT NULL,
+  state_id VARCHAR(45) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS locations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userId VARCHAR(255) UNIQUE NULL,
+  latitude  VARCHAR(255) DEFAULT NULL,
+  longitude VARCHAR(255) DEFAULT NULL,
+  timestamp DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id VARCHAR(45) NOT NULL,
+  sender_role ENUM('admin', 'driver', 'dispatcher') NOT NULL,
+  receiver_id VARCHAR(45) NOT NULL,
+  receiver_role ENUM('admin', 'driver', 'manager', 'other') NOT NULL,
+  type ENUM('text', 'image', 'video') NOT NULL,
+  text TEXT,
+  media_id INT,
+  status ENUM('sent', 'delivered', 'read') DEFAULT 'sent',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_messages_sender_receiver_status (sender_id, receiver_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS msg (
+  msg_id INT AUTO_INCREMENT PRIMARY KEY,
+  sender VARCHAR(255) NOT NULL,
+  Rtype VARCHAR(255) NOT NULL,
+  msg VARCHAR(10000) NOT NULL,
+  time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS notification (
+  notify_id INT AUTO_INCREMENT PRIMARY KEY,
+  notify_sub VARCHAR(255) NOT NULL,
+  notify_desc VARCHAR(255) NOT NULL,
+  unseen INT NOT NULL,
+  priority VARCHAR(255) NOT NULL,
+  time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  entity_id VARCHAR(255) DEFAULT NULL,
+  entity_type VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS pickup_customer (
+  customer_id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id VARCHAR(45) NOT NULL,
+  cutomer_name VARCHAR(255) NOT NULL,
+  customer_email VARCHAR(255) NOT NULL,
+  customer_phone VARCHAR(255) NOT NULL,
+  customer_fax VARCHAR(255) NOT NULL,
+  pod_name VARCHAR(255) NULL,
+  quantities VARCHAR(255) NOT NULL,
+  weight VARCHAR(255) NOT NULL,
+  airport_tender VARCHAR(255) NOT NULL,
+  attempted_deliver VARCHAR(255) NOT NULL,
+  elid VARCHAR(255) NOT NULL,
+  order_start VARCHAR(255) DEFAULT NULL,
+  order_end VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE IF NOT EXISTS routes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  route_id VARCHAR(45) NOT NULL,
+  territory_id VARCHAR(45) NOT NULL,
+  route_name VARCHAR(1000) NOT NULL,
+  day_week LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (JSON_VALID(day_week)),
+  comments LONGTEXT DEFAULT NULL,
+  clinic LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (JSON_VALID(clinic)),
+  assigned_driver VARCHAR(45) DEFAULT NULL,
+  delivery_id VARCHAR(45) DEFAULT NULL,
+  lab_id VARCHAR(45) NOT NULL,
+  assigned_at DATE DEFAULT NULL,
+  created_by VARCHAR(45) NOT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE DEFAULT NULL,
+  updated_date DATE DEFAULT NULL,
+  is_temporary TINYINT(1) NOT NULL,
+  temp_day LONGTEXT DEFAULT NULL,
+  is_active TINYINT(1) DEFAULT 1,
+  on_demand TINYINT(4) DEFAULT 0,
+  is_deleted TINYINT(1) NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS routesheet (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  sheet_id VARCHAR(45) NOT NULL,
+  route_id VARCHAR(45) NOT NULL,
+  territory_id VARCHAR(45) NOT NULL,
+  driver VARCHAR(255) DEFAULT NULL,
+  clinic VARCHAR(255) NOT NULL,
+  status VARCHAR(255) NOT NULL,
+  days LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (JSON_VALID(days)),
+  Date DATE NULL,
+  is_active TINYINT(1) DEFAULT 1,
+  order_id VARCHAR(200) DEFAULT NULL,
+  payable VARCHAR(255) DEFAULT 0,
+  pay_comment VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS routesheetdate (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  routesheetid VARCHAR(45) NOT NULL,
+  routesheet_id VARCHAR(45) NOT NULL,
+  pickuptime DATETIME NOT NULL,
+  ambient INT NOT NULL,
+  photo LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (JSON_VALID(photo)),
+  roomtemp INT NOT NULL,
+  refrigeratedtemp INT NOT NULL,
+  hh INT NOT NULL,
+  bck INT NOT NULL,
+  other VARCHAR(255) NOT NULL,
+  h2o INT NOT NULL,
+  pickupfrom VARCHAR(255) NOT NULL,
+  labstaff VARCHAR(255) DEFAULT NULL,
+  supplies VARCHAR(255) NOT NULL,
+  checklock INT NOT NULL,
+  comment LONGTEXT DEFAULT NULL,
+  pickuplocation VARCHAR(255) DEFAULT NULL,
+  timezone VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE IF NOT EXISTS routesheetdropoff (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  dropoff_id VARCHAR(45) NOT NULL,
+  delivery VARCHAR(255) NOT NULL,
+  route_id VARCHAR(45) NOT NULL,
+  route_name VARCHAR(50) NULL,
+  airline VARCHAR(50) NOT NULL,
+  flightnum VARCHAR(50) NOT NULL,
+  totalweight VARCHAR(50) NOT NULL,
+  airbill VARCHAR(50) NOT NULL,
+  bags VARCHAR(50) NOT NULL,
+  boxes VARCHAR(50) NOT NULL,
+  bck1 VARCHAR(50) NOT NULL,
+  other1 VARCHAR(50) NOT NULL,
+  h2o1 VARCHAR(50) NOT NULL,
+  receipt LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (JSON_VALID(receipt)),
+  date DATE DEFAULT (CURRENT_DATE),
+  transfer_to VARCHAR(255) DEFAULT NULL,
+  delivery_point_name VARCHAR(256) DEFAULT NULL,
+  delivery_address VARCHAR(256) DEFAULT NULL,
+  delivery_time VARCHAR(100) DEFAULT NULL,
+  timezone VARCHAR(100) DEFAULT NULL,
+  dropoff_location VARCHAR(256) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS routing (
+  routing_id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id VARCHAR(255) NOT NULL,
+  airline VARCHAR(255) NOT NULL,
+  filgthnum VARCHAR(255) NOT NULL,
+  route VARCHAR(255) NOT NULL,
+  DEP VARCHAR(255) NOT NULL,
+  ARR VARCHAR(255) NOT NULL,
+  Account VARCHAR(255) NOT NULL,
+  WayBill VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS states (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  state_id VARCHAR(45) NOT NULL,
+  state_name VARCHAR(255) NOT NULL,
+  state_code VARCHAR(100) DEFAULT NULL,
+  state_timezone VARCHAR(255) NOT NULL,
+  created_by VARCHAR(45) DEFAULT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE DEFAULT NULL,
+  updated_date DATE DEFAULT NULL,
+  is_deleted TINYINT(1) NULL DEFAULT 0,
+  is_active TINYINT(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS support (
+  tokenId INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(1000) NOT NULL,
+  subject VARCHAR(1000) NOT NULL,
+  screenshot VARCHAR(1000) NOT NULL,
+  reason VARCHAR(1000) NOT NULL,
+  explanation VARCHAR(1000) NOT NULL,
+  email VARCHAR(256) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS territories (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  territory_id VARCHAR(45) NOT NULL,
+  state_id VARCHAR(45) DEFAULT NULL,
+  territory_name VARCHAR(1000) NOT NULL,
+  territory_code VARCHAR(1000) NOT NULL,
+  manager_name VARCHAR(1000) NOT NULL,
+  manager_phone VARCHAR(1000) NOT NULL,
+  manager_email VARCHAR(1000) NOT NULL,
+  contractor_name VARCHAR(1000) NOT NULL,
+  contractor_phone VARCHAR(1000) NOT NULL,
+  contractor_email VARCHAR(1000) NOT NULL,
+  comments VARCHAR(1000) NOT NULL,
+  created_by VARCHAR(45) NOT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE DEFAULT NULL,
+  updated_date DATE DEFAULT NULL,
+  is_deleted TINYINT(1) NULL DEFAULT 0,
+  is_active TINYINT(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS territory_lab (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  territory_id VARCHAR(45) NOT NULL,
+  lab_id VARCHAR(45) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(45) NOT NULL,
+  first_name VARCHAR(255) DEFAULT NULL,
+  last_name VARCHAR(255) DEFAULT NULL,
+  email VARCHAR(255) DEFAULT NULL,
+  phone VARCHAR(255) DEFAULT NULL,
+  time_zone VARCHAR(255) DEFAULT NULL,
+  territory VARCHAR(45) DEFAULT NULL,
+  lab_id LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  created_by VARCHAR(45) DEFAULT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE DEFAULT NULL,
+  updated_date DATE DEFAULT NULL,
+  is_deleted TINYINT(1) NULL DEFAULT 0,
+  is_active TINYINT(1) DEFAULT 1,
+  socket_broad VARCHAR(255) DEFAULT NULL,
+  socket_individual VARCHAR(255) DEFAULT NULL,
+  isOnline TINYINT(1) DEFAULT 0,
+  is_agreed TINYINT(1) DEFAULT 0,
+  login_attempts INT NULL,
+  lock_until DATETIME DEFAULT NULL,
+  expoPushToken VARCHAR(255) DEFAULT NULL,
+  supplies LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS broadcast_message_reads (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  message_id INT NOT NULL,
+  user_id VARCHAR(45) NOT NULL,
+  read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_message_user (message_id, user_id),
+  KEY idx_message_id (message_id),
+  KEY idx_user_id (user_id),
+  CONSTRAINT fk_bmr_message FOREIGN KEY (message_id) REFERENCES broadcast_messages(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_access (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(45) NOT NULL,
+  modules LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (JSON_VALID(modules)),
+  way LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (JSON_VALID(way)),
+  actions LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (JSON_VALID(actions)),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_agreements (
+  agreement_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(45) NOT NULL,
+  agreement_text TEXT NOT NULL,
+  signature LONGTEXT NOT NULL,
+  agreed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_access_clinic (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(45) DEFAULT NULL,
+  user_access_id VARCHAR(45) NOT NULL,
+  clinic_id VARCHAR(45) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_access_territory (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(45) DEFAULT NULL,
+  user_access_id VARCHAR(45) NOT NULL,
+  territory_id VARCHAR(45) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_data (
+  data_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(255) DEFAULT NULL,
+  email VARCHAR(1000) DEFAULT NULL,
+  email2 VARCHAR(1000) DEFAULT NULL,
+  scndPhone VARCHAR(1000) DEFAULT NULL,
+  address1 VARCHAR(255) DEFAULT NULL,
+  city VARCHAR(255) DEFAULT NULL,
+  state1 VARCHAR(255) DEFAULT NULL,
+  zip VARCHAR(255) DEFAULT NULL,
+  ship_address1 VARCHAR(255) DEFAULT NULL,
+  ship_address2 VARCHAR(255) DEFAULT NULL,
+  ship_city VARCHAR(255) DEFAULT NULL,
+  ship_state VARCHAR(255) DEFAULT NULL,
+  ship_zip VARCHAR(255) DEFAULT NULL,
+  nickName VARCHAR(255) DEFAULT NULL,
+  ssn VARCHAR(255) DEFAULT NULL,
+  DOB VARCHAR(255) DEFAULT NULL,
+  emp_type VARCHAR(255) DEFAULT NULL,
+  hire_date DATE DEFAULT NULL,
+  term_date DATE DEFAULT NULL,
+  emergency_name VARCHAR(255) DEFAULT NULL,
+  emergency_phone VARCHAR(255) DEFAULT NULL,
+  relationship VARCHAR(255) DEFAULT NULL,
+  comment LONGTEXT DEFAULT NULL,
+  tsa_verified VARCHAR(255) DEFAULT '0',
+  tsaexpiry DATE DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS willcalltime (
+  timeid INT AUTO_INCREMENT PRIMARY KEY,
+  willcall_id VARCHAR(45) NOT NULL,
+  pickuptime VARCHAR(255) DEFAULT NULL,
+  deliveredtime VARCHAR(255) DEFAULT NULL,
+  timezone VARCHAR(255) DEFAULT NULL,
+  canceld VARCHAR(255) NULL,
+  completed VARCHAR(255) NULL,
+  elid VARCHAR(255) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS willcall_comment (
+  commentid INT AUTO_INCREMENT PRIMARY KEY,
+  order_id VARCHAR(45) NOT NULL,
+  comment LONGTEXT DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS will_call (
+  id INT(11) AUTO_INCREMENT PRIMARY KEY,
+  order_id VARCHAR(45) NOT NULL,
+  willcall_type VARCHAR(255) NOT NULL,
+  clinicId VARCHAR(45) DEFAULT NULL,
+  willcall_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  job_num VARCHAR(255) NOT NULL,
+  pickup_facility VARCHAR(255) NOT NULL,
+  pick_address VARCHAR(255) NOT NULL,
+  pick_address2 VARCHAR(255) NOT NULL,
+  pick_city VARCHAR(255) NOT NULL,
+  pick_state VARCHAR(255) NOT NULL,
+  pick_zip VARCHAR(255) NOT NULL,
+  pick_instr VARCHAR(255) NOT NULL,
+  status VARCHAR(255) NOT NULL,
+  unseen TINYINT(1) NOT NULL,
+  lab_id VARCHAR(45) DEFAULT NULL,
+  created_by VARCHAR(45) DEFAULT NULL,
+  updated_by VARCHAR(45) DEFAULT NULL,
+  created_date DATE DEFAULT NULL,
+  updated_date DATE DEFAULT NULL,
+  is_deleted TINYINT(1) NULL DEFAULT 0,
+  is_active TINYINT(1) DEFAULT 1,
+  is_routed TINYINT(1) DEFAULT 0,
+  driver VARCHAR(45) DEFAULT NULL,
+  payable VARCHAR(255) DEFAULT 0,
+  pay_comment VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE supplies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    supplies_id VARCHAR(50) NOT NULL UNIQUE,
+    s_name VARCHAR(255) NOT NULL,
+    s_code VARCHAR(100) NOT NULL,
+    created_by VARCHAR(255) NULL,
+    updated_by VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+    CREATE TABLE IF NOT EXISTS teams (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      team_name VARCHAR(255) NOT NULL,
+      lead_driver_id VARCHAR(45) NOT NULL,
+      created_by VARCHAR(45) DEFAULT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE IF NOT EXISTS team_members (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      team_id INT NOT NULL,
+      user_id VARCHAR(45) NOT NULL,
+      INDEX (team_id),
+      INDEX (user_id),
+      FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    CREATE TABLE supplies_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        supplies_history_id VARCHAR(50) NOT NULL UNIQUE,
+        supplies_id VARCHAR(50) NOT NULL,
+        driver_id VARCHAR(50) NOT NULL,
+        quantity INT NOT NULL,
+        created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_by VARCHAR(255) NULL,
+        updated_by VARCHAR(255) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+
+  CREATE TABLE IF NOT EXISTS chat_media (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    file_url TEXT NOT NULL,
+    media_type ENUM('image', 'video') NOT NULL,
+    file_size INT(11) DEFAULT NULL,
+    mime_type VARCHAR(100) DEFAULT NULL,
+    conversation_id VARCHAR(100) NOT NULL COMMENT 'Format: userA_userB where smaller ID comes first',
+    uploaded_by VARCHAR(45) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+`;
